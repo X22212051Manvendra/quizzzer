@@ -1,0 +1,22 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+      python: 3.11
+  pre_build:
+    commands:
+      - pip install --upgrade pip
+      - pip install -r requirements.txt
+      - sudo yum update -y
+      - yum install -y jq
+      - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
+      - unzip ./sonar-scanner-cli-4.7.0.2747-linux.zip
+      - export PATH=$PATH:./sonar-scanner-4.7.0.2747-linux/bin/
+  build:
+    commands:
+      - sonar-scanner -Dsonar.login=dc0830b737b37492e799efa0efaf09f5bee97605 -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=22212051-online-shop -Dsonar.organization=x22212051manvendra -DgeneratePom=true
+      - sleep 5
+      - curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=22212051-online-shop > result.json
+      - cat result.json
+      - if [ $(jq -r '.projectStatus.status' result.json) = ERROR ] ; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
